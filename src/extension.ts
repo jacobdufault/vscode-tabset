@@ -150,9 +150,22 @@ async function closeActiveEditor() {
 async function saveAndCloseTabs(): Promise<Tab[]> {
   // TODO: use focus third/second/first editor group
   let result: Tab[] = [];
+  let lastEditor: vscode.TextEditor|undefined;
+  let lastCount = vscode.window.visibleTextEditors.length;
   while (vscode.window.activeTextEditor ||
          vscode.window.visibleTextEditors.length > 0) {
     let editor = vscode.window.activeTextEditor;
+
+    // If we have not had an editor twice in a row, and we are not reducing
+    // visibleTextEditors length, exit the loop. It seems that sometimes vscode
+    // will report visible text editors even though there are none.
+    if (!lastEditor && !editor &&
+        vscode.window.visibleTextEditors.length == lastCount) {
+      break;
+    }
+    lastCount = vscode.window.visibleTextEditors.length;
+    lastEditor = editor;
+
     if (editor)
       result.push(Tab.fromEditor(editor));
     await closeActiveEditor();
